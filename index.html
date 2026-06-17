@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RMUTTO Interactive Campus Map (v11 - Independent Zone Sizes)</title>
+    <style>
+        :root {
+            --primary-color: #1a365d;
+            --accent-color: #3182ce;
+            --bg-color: #f7fafc;
+            --card-bg: #ffffff;
+            --text-dark: #2d3748;
+            --text-light: #718096;
+            --border-color: #e2e8f0;
+            --success-color: #38a169;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-dark);
+            line-height: 1.5;
+            padding: 20px;
+            overflow-x: hidden;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 15px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid var(--border-color);
+        }
+
+        header h1 {
+            color: var(--primary-color);
+            font-size: 24px;
+            margin-bottom: 4px;
+        }
+
+        header p {
+            color: var(--text-light);
+            font-size: 13px;
+        }
+
+        .app-main-layout {
+            display: flex;
+            gap: 20px;
+            max-width: 1750px;
+            margin: 0 auto;
+            align-items: start;
+        }
+
+        .map-section {
+            flex: 1.4;
+            background: var(--card-bg);
+            border-radius: 8px;
+            padding: 15px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            border: 1px solid var(--border-color);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+        }
+
+        .map-section.maximized {
+            flex: 2.1;
+        }
+
+        .map-container {
+            position: relative;
+            width: 100%;
+            overflow: hidden;
+            border-radius: 6px;
+            background: #d4e726;
+        }
+
+        .map-container img {
+            width: 100%;
+            height: auto;
+            display: block;
+            transition: transform 0.3s ease;
+        }
+
+        .map-clickable-zone {
+            position: absolute;
+            cursor: pointer;
+            transform: translate(-50%, -50%);
+            border: 3px dashed transparent;
+            border-radius: 6px;
+            z-index: 10;
+            transition: all 0.2s ease;
+        }
+
+        .map-clickable-zone:hover {
+            border-color: #c8e624;
+            background-color: rgba(49, 130, 206, 0.15);
+            box-shadow: 0 0 10px rgba(49, 130, 206, 0.3);
+        }
+
+        .map-clickable-zone.highlighted {
+            border-color: #e0e0e0;
+            background-color: rgba(56, 161, 105, 0.2);
+            box-shadow: 0 0 12px rgba(56, 161, 105, 0.5);
+            z-index: 50;
+        }
+
+        .gate-zone {
+            border-radius: 50%;
+        }
+
+        .legend-section {
+            flex: 0.65;
+            background: var(--card-bg);
+            border-radius: 8px;
+            padding: 18px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            border: 1px solid var(--border-color);
+            max-height: 820px;
+            overflow-y: auto;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .legend-section.collapsed {
+            flex: 0;
+            width: 0;
+            padding: 0;
+            margin: 0;
+            border: none;
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+        }
+
+        .legend-title-box {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding-bottom: 12px;
+            border-bottom: 2px solid var(--accent-color);
+            margin-bottom: 15px;
+        }
+
+        .legend-header-left {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .legend-title-icon {
+            width: 14px;
+            height: 14px;
+            background-color: var(--accent-color);
+            border-radius: 50%;
+        }
+
+        .legend-title {
+            font-size: 15px;
+            font-weight: bold;
+            color: var(--primary-color);
+        }
+
+        .control-btn {
+            background: #edf2f7;
+            color: #4a5568;
+            border: 1px solid #cbd5e0;
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.15s ease-in-out;
+        }
+
+        .control-btn:hover {
+            background: var(--accent-color);
+            color: white;
+            border-color: var(--accent-color);
+        }
+
+        .map-toolbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .legend-list {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            padding: 8px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .legend-item:hover {
+            background: #ebf8ff;
+            border-color: var(--accent-color);
+            transform: translateX(3px);
+        }
+
+        .legend-item.active {
+            background: var(--accent-color);
+            color: white;
+            border-color: var(--accent-color);
+        }
+
+        .legend-code-badge {
+            font-size: 11px;
+            font-weight: bold;
+            background: #edf2f7;
+            color: #4a5568;
+            padding: 3px 6px;
+            border-radius: 4px;
+            margin-right: 12px;
+            min-width: 58px;
+            text-align: center;
+            border: 1px solid #cbd5e0;
+            flex-shrink: 0;
+        }
+
+        .legend-item.active .legend-code-badge {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border-color: transparent;
+        }
+
+        .legend-text {
+            font-size: 12.5px;
+            font-weight: 500;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .info-section {
+            flex: 0.75;
+            background: var(--card-bg);
+            border-radius: 8px;
+            padding: 22px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            border-left: 5px solid var(--accent-color);
+            border-top: 1px solid var(--border-color);
+            border-right: 1px solid var(--border-color);
+            border-bottom: 1px solid var(--border-color);
+            min-height: 600px;
+        }
+
+        .info-placeholder {
+            color: var(--text-light);
+            text-align: center;
+            font-style: italic;
+            padding: 220px 0;
+            font-size: 13.5px;
+        }
+
+        .info-content {
+            display: none;
+        }
+
+        .info-content.active {
+            display: block;
+            animation: fadeIn 0.2s ease-in-out;
+        }
+
+        .info-header {
+            margin-bottom: 15px;
+            border-bottom: 1px solid #edf2f7;
+            padding-bottom: 10px;
+        }
+
+        .info-title {
+            font-size: 18px;
+            color: var(--primary-color);
+            font-weight: bold;
+        }
+
+        .info-meta {
+            font-size: 11.5px;
+            color: var(--text-light);
+        }
+
+        .info-img-box {
+            width: 100%;
+            height: 200px;
+            background: #edf2f7;
+            border-radius: 6px;
+            overflow: hidden;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid #e2e8f0;
+        }
+
+        .info-img-box img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .floor-container {
+            margin-top: 12px;
+        }
+
+        .floor-row {
+            display: flex;
+            align-items: flex-start;
+            padding: 9px;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            margin-bottom: 6px;
+            font-size: 12.5px;
+        }
+
+        .floor-badge {
+            background: #edf2f7;
+            color: #4a5568;
+            font-weight: bold;
+            padding: 3px 6px;
+            border-radius: 4px;
+            min-width: 50px;
+            text-align: center;
+            font-size: 11px;
+            margin-right: 10px;
+            border: 1px solid #cbd5e0;
+            flex-shrink: 0;
+        }
+
+        .room-tag {
+            color: #2b6cb0;
+            font-weight: bold;
+            font-family: monospace;
+            font-size: 12.5px;
+            background: #ebf8ff;
+            padding: 1px 5px;
+            border-radius: 4px;
+            margin-right: 8px;
+            border: 1px solid #bee3f8;
+            flex-shrink: 0;
+        }
+
+        .floor-desc {
+            color: var(--text-dark);
+            font-weight: 500;
+        }
+
+        .info-description-text {
+            margin-bottom: 12px; 
+            font-size: 13.5px; 
+            font-weight: 500; 
+            color: #4a5568;
+            white-space: pre-line; /* ช่วยให้แสดงขึ้นบรรทัดใหม่จาก \n ได้ถูกต้อง */
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(2px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @media (max-width: 1250px) {
+            .app-main-layout {
+                flex-direction: column;
+            }
+            .map-section, .legend-section, .info-section {
+                width: 100%;
+                flex: none !important;
+            }
+            .legend-section.collapsed {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>แผนที่แนะนำสถานที่ภายในเขตพื้นที่บางพระ (RMUTTO Interactive Map v11)</h1>
+    <p>ระบบแยกขนาดกรอบคลิก (Width / Height) อิสระรายอาคารเรียบร้อยแล้ว</p>
+</header>
+
+<div class="map-toolbar" style="max-width: 1750px; margin: 0 auto 10px auto;">
+    <div>
+        <button class="control-btn" id="toggleLegendGlobalBtn" onclick="toggleLegendPanel()">
+            <span id="btnIcon">◀</span> <span id="btnText">กดเก็บแผงคำอธิบาย (ขยายแผนที่ใหญ่ขึ้น)</span>
+        </button>
+    </div>
+    <div style="font-size: 12px; color: var(--text-light); font-weight: 500;">
+        * ท่านสามารถคลิกที่ตัวอาคารบนภาพเพื่อดูข้อมูล หรือคลิกผ่านแผงรายการสัญลักษณ์ด้านขวาได้โดยตรง
+    </div>
+</div>
+
+<div class="app-main-layout">
+    
+    <div class="map-section" id="mapSectionView">
+        <div class="map-container">
+            <img src="map.jpg" alt="RMUTTO Map" id="mainMapImage">
+            
+            <div class="map-clickable-zone" id="zone-BLDG01" style="top: 57%; left: 38.5%; width: 4.2%; height: 5.5%;" onclick="showLocation('BLDG01')"></div>
+            <div class="map-clickable-zone" id="zone-BLDG02" style="top: 56.5%; left: 34.5%; width: 4.2%; height: 5.5%;" onclick="showLocation('BLDG02')"></div>
+            <div class="map-clickable-zone" id="zone-BLDG03" style="top: 48%; left: 46.5%; width: 4.2%; height: 5.5%;" onclick="showLocation('BLDG03')"></div>
+            <div class="map-clickable-zone" id="zone-BLDG04" style="top: 45%; left: 51%; width: 3%; height: 4.4%;" onclick="showLocation('BLDG04')"></div>
+            <div class="map-clickable-zone" id="zone-BLDG05" style="top: 33%; left: 50.5%; width: 4%; height: 5%;" onclick="showLocation('BLDG05')"></div>
+            <div class="map-clickable-zone" id="zone-BLDG06" style="top: 23.5%; left: 48.8%; width: 4.2%; height: 5.5%;" onclick="showLocation('BLDG06')"></div>
+            <div class="map-clickable-zone" id="zone-BLDG07" style="top: 30.9%; left: 45.2%; width: 3.8%; height: 5.5%;" onclick="showLocation('BLDG07')"></div>
+            <div class="map-clickable-zone" id="zone-BLDG08" style="top: 33.5%; left: 41.5%; width: 4.2%; height: 5.5%;" onclick="showLocation('BLDG08')"></div>
+            <div class="map-clickable-zone" id="zone-BLDG09" style="top: 40.5%; left: 39.8%; width: 3%; height: 4.5%;" onclick="showLocation('BLDG09')"></div>
+            <div class="map-clickable-zone" id="zone-BLDG10" style="top: 38%; left: 34%; width: 4.2%; height: 5.5%;" onclick="showLocation('BLDG10')"></div>
+            <div class="map-clickable-zone" id="zone-BLDG11" style="top: 43%; left: 30%; width: 4.2%; height: 5.5%;" onclick="showLocation('BLDG11')"></div>
+            <div class="map-clickable-zone" id="zone-BLDG12" style="top: 50.5%; left: 25.5%; width: 4.2%; height: 5.5%;" onclick="showLocation('BLDG12')"></div>
+            <div class="map-clickable-zone" id="zone-BLDG13" style="top: 45%; left: 18%; width: 4.2%; height: 5.5%;" onclick="showLocation('BLDG13')"></div>
+            <div class="map-clickable-zone" id="zone-BLDG14" style="top: 55.5%; left: 15.5%; width: 4.2%; height: 5.5%;" onclick="showLocation('BLDG14')"></div>
+            <div class="map-clickable-zone" id="zone-BLDG15" style="top: 58.5%; left: 19.5%; width: 3.6%; height: 4.6%;" onclick="showLocation('BLDG15')"></div>
+            <div class="map-clickable-zone" id="zone-BLDG16" style="top: 63.5%; left: 27.5%; width: 4.2%; height: 5.5%;" onclick="showLocation('BLDG16')"></div>
+            <div class="map-clickable-zone" id="zone-BLDG17" style="top: 29.5%; left: 34.5%; width: 4.2%; height: 5.5%;" onclick="showLocation('BLDG17')"></div>
+            <div class="map-clickable-zone" id="zone-BLDG18" style="top: 65.5%; left: 54.5%; width: 4.2%; height: 5.5%;" onclick="showLocation('BLDG18')"></div>
+            
+            <div class="map-clickable-zone" id="zone-SCD" style="top: 38%; left: 55%; width: 3%; height: 4.6%;" onclick="showLocation('SCD')" title="SCD โรงอาหาร"></div>
+            <div class="map-clickable-zone" id="zone-SD" style="top: 39.2%; left: 69.4%; width: 3.2%; height: 5%;" onclick="showLocation('SD')" title="SD หอพักนักศึกษา"></div>
+            
+            <div class="map-clickable-zone gate-zone" id="zone-GATE1" style="top: 50.5%; left: 51.5%; width: 3.5%; height: 4.5%;" onclick="showLocation('GATE1')"></div>
+            <div class="map-clickable-zone gate-zone" id="zone-GATE4" style="top: 60.5%; left: 11.5%; width: 3.5%; height: 4.5%;" onclick="showLocation('GATE4')"></div>
+        </div>
+    </div>
+
+    <div class="legend-section" id="legendSectionView">
+        <div class="legend-title-box">
+            <div class="legend-header-left">
+                <div class="legend-title-icon"></div>
+                <div class="legend-title">คำอธิบายสัญลักษณ์อาคาร</div>
+            </div>
+        </div>
+        <div class="legend-list" id="customLegendList"></div>
+    </div>
+
+    <div class="info-section" id="infoSection">
+        <div class="info-placeholder" id="placeholderText">
+            กรุณาเลือกคลิกที่ตัวอาคารบนแผนที่ หรือเลือกจากรายการคำอธิบาย เพื่อดูโครงสร้างรายละเอียดรายชั้นเรียน
+        </div>
+        
+        <div class="info-content" id="infoContent">
+            <div class="info-header">
+                <div class="info-title" id="locTitle">ชื่อสถานที่</div>
+                <div class="info-meta" id="locCode">รหัสตึกอ้างอิง</div>
+            </div>
+            <div class="info-body">
+                <div class="info-img-box">
+                    <img id="locImg" src="" alt="Location Preview" onerror="this.src='https://via.placeholder.com/400x200?text=RMUTTO+Asset+Image'">
+                </div>
+                <p id="locDesc" class="info-description-text"></p>
+                
+                <div id="floorSection" style="display: none;">
+                    <h4 style="color: var(--primary-color); font-size: 13.5px; margin-bottom: 10px; font-weight: bold;">โครงสร้างและรายละเอียดรายชั้น:</h4>
+                    <div id="floorContainer" class="floor-container"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    const campusData = {
+        'BLDG01': { title: 'อาคารสรรพวิชญ์บริการ', desc: 'อาคารศูนย์รวมบริการทางการศึกษา ห้องสมุดหลัก และสิ่งอำนวยความสะดวกสำหรับนักศึกษา', img: 'bldg01.jpg', floors: [['ชั้น 3', 'LIB-3', 'ห้องปฏิบัติการคอมพิตเตอร์หลัก'], ['ชั้น 2', 'LIB-2', 'ห้องสมุดกลางและโซนอ่านหนังสือเงียบ'], ['ชั้น 1', 'LIB-1', 'จุดประชาสัมพันธ์ พื้นที่จัดนิทรรศการ และสำนักงาน']] },
+        'BLDG02': { title: 'อาคารหอประชุมมังคลอุบล', desc: 'หอประชุมใหญ่สำหรับจัดพิธีสำคัญ กิจกรรมปฐมนิเทศ และงานนิทรรศการของมหาวิทยาลัย', img: 'bldg02.jpg', floors: [] },
+        'BLDG03': { title: 'อาคารอเนกประสงค์และกิจการนักศึกษา', desc: 'ศูนย์กิจกรรมนักศึกษา กองพัฒนานักศึกษา และพื้นที่นันทนาการในร่ม', img: 'bldg03.jpg', floors: [] },
+        'BLDG04': { title: 'อาคารสถาปัตยกรรมศาสตร์', desc: 'ห้องปฏิบัติการออกแบบ สตูดิโอเขียนแบบ และพื้นที่จัดแสดงผลงานของนักศึกษาคณะสถาปัตยกรรมศาสตร์', img: 'bldg04.jpg', floors: [] },
+        'BLDG05': { title: 'อาคารสำนักวิชาเอกวิศวกรรมศาสตร์และนวัตกรรม', desc: 'ศูนย์วิจัยและห้องปฏิบัติการทางวิศวกรรมขั้นสูง', img: 'bldg05.jpg', floors: [] },
+        'BLDG06': { 
+            title: 'อาคารเฉลิมพระเกียรติ 7 รอบ พระชนมพรรษา', 
+            desc: 'คณะวิทยาศาสตร์และเทคโนโลยี ศูนย์รวมศูนย์วิจัย ห้องปฏิบัติการวิทยาศาสตร์ และห้องปฏิบัติการคอมพิวเตอร์ประจำคณะ\n\n📌 สาขาวิชาที่เปิดสอน:\n1. วิทยาศาสตร์และเทคโนโลยีการอาหาร\n2. เทคโนโลยีการประกอบอาหารและการบริการ\n3. สาขาวิชาวิทยาการคอมพิวเตอร์\n4. สาขาวิชาเทคโนโลยีสารสนเทศและการสื่อสาร\n5. ผลิตภัณฑ์เพื่อสุขภาพและความงาม\n6. การจัดการสิ่งแวดล้อมและความปลอดภัย\n7. นวัตกรรมผลิตภัณฑ์ชีวภาพ', 
+            img: 'bldg06.jpg', 
+            floors: [
+                ['ชั้น 9', 'SC901-907', 'ห้องพักอาจารย์สาขาเทคโนโลยีพลังงาน / ห้องปฏิบัติการอาหารปลอดภัย'],
+                ['ชั้น 8', 'SC801-807', 'ห้องปฏิบัติการฟิสิกส์ / ห้องพักอาจารย์ฟิสิกส์'],
+                ['ชั้น 7', 'SC701-707', 'ห้องปฏิบัติการฟิสิกส์ / ห้องพักอาจารย์คณิตศาสตร์'],
+                ['ชั้น 6', 'SC601-607', 'ห้องปฏิบัติการจุลชีววิทยา / ห้องพักอาจารย์จุลชีววิทยา'],
+                ['ชั้น 5', 'SC501-512', 'ห้องปฏิบัติการชีววิทยา / ห้องพักอาจารย์ชีววิทยา'],
+                ['ชั้น 4', 'SC401-414', 'ห้องปฏิบัติการพันธุศาสตร์ / ห้องพักอาจารย์พันธุศาสตร์'],
+                ['ชั้น 3', 'SC301-312', 'ห้องประชุมคณะวิทยาศาสตร์และเทคโนโลยี / ห้องปฏิบัติการเคมี / ห้องพักอาจารย์เคมี'],
+                ['ชั้น 2', 'SC201-212', 'ห้องปฏิบัติการคอมพิวเตอร์ / ห้องพักอาจารย์สาขาวิทยาการคอมพิวเตอร์'],
+                ['ชั้น 1', 'SC101-104', 'สำนักงานคณบดีคณะวิทยาศาสตร์และเทคโนโลยี']
+            ] 
+        },
+        'BLDG07': { title: 'อาคารศูนย์เรียนรวม (ศร.)', desc: 'อาคารเรียนรวมสำหรับการบรรยายรายวิชาพื้นฐานของทุกคณะ', img: 'bldg07.jpg', floors: [['ชั้น 1-4', 'LECTURE', 'ห้องเรียนบรรยายรวมขนาดใหญ่รองรับนักศึกษาจำนวนมาก']] },
+        'BLDG08': { title: 'อาคารคณะมนุษยศาสตร์และสังคมศาสตร์', desc: 'ห้องปฏิบัติการทางภาษา สำนักงานคณะ และห้องเรียนสายสังคมศึกษา', img: 'bldg08.jpg', floors: [] },
+        'BLDG09': { title: 'อาคารสถาบันเทคโนโลยีการบินและอวกาศ', desc: 'ศูนย์ฝึกอบรมการบินจำลองและวิศวกรรมการบิน', img: 'bldg09.jpg', floors: [] },
+        'BLDG10': { title: 'อาคารคณะเกษตรศาสตร์และทรัพยากรธรรมชาติ', desc: 'ห้องปฏิบัติการวิเคราะห์ดิน พืช และการจัดการทรัพยากรเกษตรกรรม', img: 'bldg10.jpg', floors: [] },
+        'BLDG11': { title: 'อาคารวิทยบริการและเทคโนโลยีสารสนเทศ', desc: 'ศูนย์คอมพิวเตอร์หลักของมหาวิทยาลัยและห้องพัฒนาระบบเครือข่าย', img: 'bldg11.jpg', floors: [] },
+        'BLDG12': { title: 'อาคารอุตสาหกรรมเกษตร', desc: 'โรงงานต้นแบบและห้องวิจัยการพัฒนาผลิตภัณฑ์อุตสาหกรรมเกษตร', img: 'bldg12.jpg', floors: [] },
+        'BLDG13': { title: 'อาคารสาขาวิชาสัตวศาสตร์', desc: 'ศูนย์สาธิตการเลี้ยงสัตว์และการจัดการฟาร์มปศุสัตว์', img: 'bldg13.jpg', floors: [] },
+        'BLDG14': { title: 'อาคารต้นแบบแปรรูปผลิตภัณฑ์อาหารปลอดภัย', desc: 'สถานที่ปฏิบัติการด้านเทคโนโลยีอาหารที่ได้มาตรฐานความปลอดภัยสูง', img: 'bldg14.jpg', floors: [] },
+        'BLDG15': { title: 'อาคารปฏิบัติการแปรรูปอาหาร 2', desc: 'อาคารเรียนปฏิบัติการเทคโนโลยีอาหารและการวิเคราะห์เคมีอาหาร', img: 'bldg15.jpg', floors: [] },
+        'BLDG16': { title: 'อาคารสาขาวิชาประมง', desc: 'อาคารวิจัยและโรงเพาะเลี้ยงสัตว์น้ำเพื่อการศึกษา', img: 'bldg16.jpg', floors: [] },
+        'BLDG17': { title: 'อาคารสถาบันบัวราชมงคลตะวันออก', desc: 'ศูนย์อนุรักษ์ รวบรวมพันธุ์บัว และการศึกษาวิจัยการใช้ประโยชน์จากบัว', img: 'bldg17.jpg', floors: [] },
+        'BLDG18': { title: 'อาคารคณะสัตวแพทยศาสตร์ และโรงพยาบาลสัตว์', desc: 'โรงพยาบาลสัตว์บริการสาธารณะและสถานที่ฝึกปฏิบัติงานของนักศึกษาสัตวแพทย์', img: 'bldg18.jpg', floors: [] },
+        
+        'SCD': { title: 'โรงอาหาร (SCD)', desc: 'ศูนย์อาหารและโรงอาหารกลางประจำวิทยาเขต บริเวณจำหน่ายอาหาร เครื่องดื่ม และร้านค้าสวัสดิการสำหรับนักศึกษาและบุคลากร', img: 'scd.jpg', floors: [['ชั้น 1', 'CANTEEN', 'ร้านค้าจำหน่ายอาหาร / พื้นที่รับประทานอาหารรวม']] },
+        'SD': { title: 'หอพักนักศึกษา (SD)', desc: 'อาคารหอพักและที่พักอาศัยภายในมหาวิทยาลัยสำหรับนักศึกษา พร้อมระบบรักษาความปลอดภัยและสิ่งอำนวยความสะดวกพื้นฐาน', img: 'sd.jpg', floors: [['ชั้น 1-4', 'DORM', 'ห้องพักนักศึกษาแยกฝั่งชาย-หญิง / ห้องส่วนกลางประจำหอพัก']] },
+        
+        'GATE1': { title: 'ประตูทางเข้า-ออกที่ 1', desc: 'ประตูหลักฝั่งลูกศรสีเหลือง เชื่อมเส้นทางสัญจรเข้าสู่วิทยาเขตหลัก', img: 'gate1.jpg', floors: [] },
+        'GATE4': { title: 'ประตูทางเข้า-ออกที่ 4', desc: 'ประตูหลักฝั่งลูกศรสีแดง เชื่อมต่อเส้นทางซ่อมบำรุงและโรงงานอุตสาหกรรมอาหารด้านหลัง', img: 'gate4.jpg', floors: [] }
+    };
+
+    const legendContainer = document.getElementById('customLegendList');
+    Object.keys(campusData).forEach(key => {
+        const item = document.createElement('div');
+        item.className = 'legend-item';
+        item.id = 'legend-' + key;
+        
+        const badge = document.createElement('div');
+        badge.className = 'legend-code-badge';
+        
+        let displayCode = key;
+        if(key === 'GATE1') displayCode = 'ประตู 1';
+        if(key === 'GATE4') displayCode = 'ประตู 4';
+        badge.innerText = displayCode;
+        
+        const text = document.createElement('div');
+        text.className = 'legend-text';
+        text.innerText = campusData[key].title;
+        text.title = campusData[key].title;
+        
+        item.appendChild(badge);
+        item.appendChild(text);
+        item.onclick = () => showLocation(key);
+        legendContainer.appendChild(item);
+    });
+
+    function toggleLegendPanel() {
+        const legendSection = document.getElementById('legendSectionView');
+        const mapSection = document.getElementById('mapSectionView');
+        const btnIcon = document.getElementById('btnIcon');
+        const btnText = document.getElementById('btnText');
+
+        if (legendSection.classList.contains('collapsed')) {
+            legendSection.classList.remove('collapsed');
+            mapSection.classList.remove('maximized');
+            btnIcon.innerText = '◀';
+            btnText.innerText = 'กดเก็บแผงคำอธิบาย (ขยายแผนที่ใหญ่ขึ้น)';
+        } else {
+            legendSection.classList.add('collapsed');
+            mapSection.classList.add('maximized');
+            btnIcon.innerText = '▶';
+            btnText.innerText = 'กดแสดงแผงคำอธิบาย';
+        }
+    }
+
+    function showLocation(id) {
+        const placeholder = document.getElementById('placeholderText');
+        const content = document.getElementById('infoContent');
+        const data = campusData[id];
+
+        if (!data) return;
+
+        document.querySelectorAll('.map-clickable-zone').forEach(z => z.classList.remove('highlighted'));
+        document.querySelectorAll('.legend-item').forEach(l => l.classList.remove('active'));
+
+        const targetZone = document.getElementById('zone-' + id);
+        if (targetZone) targetZone.classList.add('highlighted');
+        
+        const targetLegendItem = document.getElementById('legend-' + id);
+        if (targetLegendItem) targetLegendItem.classList.add('active');
+
+        placeholder.style.display = 'none';
+        content.className = 'info-content active';
+
+        document.getElementById('locTitle').innerText = data.title;
+        
+        if (id.startsWith('BLDG') || id === 'SCD' || id === 'SD') {
+            document.getElementById('locCode').innerText = 'รหัสอาคารอ้างอิง: ' + id;
+        } else {
+            document.getElementById('locCode').innerText = 'ช่องทางการสื่อสารเข้าออก';
+        }
+        
+        document.getElementById('locDesc').innerText = data.desc;
+        document.getElementById('locImg').src = data.img;
+
+        const floorSection = document.getElementById('floorSection');
+        const container = document.getElementById('floorContainer');
+        container.innerHTML = '';
+
+        if (data.floors && data.floors.length > 0) {
+            floorSection.style.display = 'block';
+            data.floors.forEach(floor => {
+                const row = document.createElement('div');
+                row.className = 'floor-row';
+                
+                const fBadge = document.createElement('div');
+                fBadge.className = 'floor-badge';
+                fBadge.innerText = floor[0];
+                
+                const rTag = document.createElement('div');
+                rTag.className = 'room-tag';
+                rTag.innerText = floor[1];
+                
+                const fDesc = document.createElement('div');
+                fDesc.className = 'floor-desc';
+                fDesc.innerText = floor[2];
+                
+                row.appendChild(fBadge);
+                row.appendChild(rTag);
+                row.appendChild(fDesc);
+                container.appendChild(row);
+            });
+        } else {
+            floorSection.style.display = 'none';
+        }
+    }
+</script>
+
+</body>
+</html>

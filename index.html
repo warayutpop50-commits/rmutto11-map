@@ -114,6 +114,52 @@
             border-radius: 50%;
         }
 
+
+        .custom-pin {
+            width: 24px !important;
+            height: 24px !important;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            pointer-events: auto;
+        }
+
+        .pin-marker {
+            width: 14px;
+            height: 14px;
+            background-color: #e53e3e; 
+            border: 2px solid #ffffff;
+            border-radius: 50%;
+            z-index: 2;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+            transition: all 0.2s ease;
+        }
+
+        .pin-pulse {
+            position: absolute;
+            width: 24px;
+            height: 24px;
+            background-color: rgba(229, 62, 62, 0.4);
+            border-radius: 50%;
+            animation: pinActivePulse 1.8s infinite ease-in-out;
+            z-index: 1;
+        }
+
+        @keyframes pinActivePulse {
+            0% { transform: scale(0.6); opacity: 1; }
+            100% { transform: scale(1.6); opacity: 0; }
+        }
+
+        .map-clickable-zone.custom-pin.highlighted .pin-marker {
+            background-color: #38a169; 
+            transform: scale(1.25);
+            box-shadow: 0 0 8px rgba(56, 161, 105, 0.6);
+        }
+        
+        .map-clickable-zone.custom-pin.highlighted .pin-pulse {
+            background-color: rgba(56, 161, 105, 0.4);
+        }
+
         .legend-section {
             flex: 0.65;
             background: var(--card-bg);
@@ -370,7 +416,7 @@
             font-size: 13.5px; 
             font-weight: 500; 
             color: #4a5568;
-            white-space: pre-line; /* ช่วยให้แสดงขึ้นบรรทัดใหม่จาก \n ได้ถูกต้อง */
+            white-space: pre-line;
         }
 
         @keyframes fadeIn {
@@ -440,7 +486,12 @@
             
             <div class="map-clickable-zone gate-zone" id="zone-GATE1" style="top: 50.5%; left: 51.5%; width: 3.5%; height: 4.5%;" onclick="showLocation('GATE1')"></div>
             <div class="map-clickable-zone gate-zone" id="zone-GATE4" style="top: 60.5%; left: 11.5%; width: 3.5%; height: 4.5%;" onclick="showLocation('GATE4')"></div>
-        </div>
+
+            <div class="map-clickable-zone custom-pin" id="zone-NEW01" style="top: 29%; left: 52%;" onclick="showLocation('NEW01')" title="คลิกดูสถานที่ใหม่">
+                <div class="pin-marker"></div>
+                <div class="pin-pulse"></div>
+            </div>
+            </div>
     </div>
 
     <div class="legend-section" id="legendSectionView">
@@ -519,7 +570,15 @@
         'SD': { title: 'หอพักนักศึกษา (SD)', desc: 'อาคารหอพักและที่พักอาศัยภายในมหาวิทยาลัยสำหรับนักศึกษา พร้อมระบบรักษาความปลอดภัยและสิ่งอำนวยความสะดวกพื้นฐาน', img: 'sd.jpg', floors: [['ชั้น 1-4', 'DORM', 'ห้องพักนักศึกษาแยกฝั่งชาย-หญิง / ห้องส่วนกลางประจำหอพัก']] },
         
         'GATE1': { title: 'ประตูทางเข้า-ออกที่ 1', desc: 'ประตูหลักฝั่งลูกศรสีเหลือง เชื่อมเส้นทางสัญจรเข้าสู่วิทยาเขตหลัก', img: 'gate1.jpg', floors: [] },
-        'GATE4': { title: 'ประตูทางเข้า-ออกที่ 4', desc: 'ประตูหลักฝั่งลูกศรสีแดง เชื่อมต่อเส้นทางซ่อมบำรุงและโรงงานอุตสาหกรรมอาหารด้านหลัง', img: 'gate4.jpg', floors: [] }
+        'GATE4': { title: 'ประตูทางเข้า-ออกที่ 4', desc: 'ประตูหลักฝั่งลูกศรสีแดง เชื่อมต่อเส้นทางซ่อมบำรุงและโรงงานอุตสาหกรรมอาหารด้านหลัง', img: 'gate4.jpg', floors: [] },
+
+        'NEW01': { 
+            title: 'อบ.', 
+            desc: 'เป็นสถานที่พัก อบ.', 
+            img: 'bldg19.jpg', 
+            floors: [
+            ] 
+        }
     };
 
     const legendContainer = document.getElementById('customLegendList');
@@ -534,6 +593,8 @@
         let displayCode = key;
         if(key === 'GATE1') displayCode = 'ประตู 1';
         if(key === 'GATE4') displayCode = 'ประตู 4';
+        if(key.startsWith('NEW')) displayCode = 'ใหม่'; 
+        
         badge.innerText = displayCode;
         
         const text = document.createElement('div');
@@ -589,6 +650,8 @@
         
         if (id.startsWith('BLDG') || id === 'SCD' || id === 'SD') {
             document.getElementById('locCode').innerText = 'รหัสอาคารอ้างอิง: ' + id;
+        } else if (id.startsWith('NEW')) {
+            document.getElementById('locCode').innerText = 'สถานที่เพิ่มพิเศษนอกแผนที่ภาพถ่าย';
         } else {
             document.getElementById('locCode').innerText = 'ช่องทางการสื่อสารเข้าออก';
         }

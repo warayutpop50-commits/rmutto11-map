@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RMUTTO Interactive Campus Map (v11 - Independent Zone Sizes)</title>
+    <title>RMUTTO Map</title>
     <style>
         :root {
             --primary-color: #1a365d;
@@ -308,7 +308,10 @@
             border-top: 1px solid var(--border-color);
             border-right: 1px solid var(--border-color);
             border-bottom: 1px solid var(--border-color);
-            min-height: 600px;
+            
+            /* แก้ไขส่วนนี้เพื่อให้เลื่อนแยกได้ ไม่ดึงทั้งจอ */
+            max-height: 820px;
+            overflow-y: auto;
         }
 
         .info-placeholder {
@@ -435,13 +438,18 @@
             .legend-section.collapsed {
                 display: none;
             }
+            /* บนหน้าจอมือถือ/แท็บเล็ต ให้ขยายสูงตามเนื้อหาปกติ */
+            .info-section {
+                max-height: none;
+                overflow-y: visible;
+            }
         }
     </style>
 </head>
 <body>
 
 <header>
-    <h1>แผนที่แนะนำสถานที่ภายในเขตพื้นที่บางพระ (RMUTTO Interactive Map v11)</h1>
+    <h1>แผนที่แนะนำสถานที่ภายในเขตพื้นที่บางพระ (RMUTTO MAP )</h1>
     <p>ระบบแยกขนาดกรอบคลิก (Width / Height) อิสระรายอาคารเรียบร้อยแล้ว</p>
 </header>
 
@@ -537,7 +545,7 @@
         'BLDG04': { title: 'อาคารสถาปัตยกรรมศาสตร์', desc: 'ห้องปฏิบัติการออกแบบ สตูดิโอเขียนแบบ และพื้นที่จัดแสดงผลงานของนักศึกษาคณะสถาปัตยกรรมศาสตร์', img: 'bldg04.jpg', floors: [] },
         'BLDG05': { title: 'อาคารสำนักวิชาเอกวิศวกรรมศาสตร์และนวัตกรรม', desc: 'ศูนย์วิจัยและห้องปฏิบัติการทางวิศวกรรมขั้นสูง', img: 'bldg05.jpg', floors: [] },
         'BLDG06': { 
-            title: 'คณะวิทยาศาสตร์และเทคโนโลยี', 
+            title: 'คณะวิทยาศาสตร์และเทคโนโลยี(SC)', 
             desc: 'คณะวิทยาศาสตร์และเทคโนโลยี ศูนย์รวมศูนย์วิจัย ห้องปฏิบัติการวิทยาศาสตร์ และห้องปฏิบัติการคอมพิวเตอร์ประจำคณะ\n\n📌 สาขาวิชาที่เปิดสอน:\n1. วิทยาศาสตร์และเทคโนโลยีการอาหาร\n2. เทคโนโลยีการประกอบอาหารและการบริการ\n3. สาขาวิชาวิทยาการคอมพิวเตอร์\n4. สาขาวิชาเทคโนโลยีสารสนเทศและการสื่อสาร\n5. ผลิตภัณฑ์เพื่อสุขภาพและความงาม\n6. การจัดการสิ่งแวดล้อมและความปลอดภัย\n7. นวัตกรรมผลิตภัณฑ์ชีวภาพ', 
             img: 'bldg06.jpg', 
             floors: [
@@ -572,7 +580,7 @@
         'GATE4': { title: 'ประตูทางเข้า-ออกที่ 4', desc: 'ประตูหลักฝั่งลูกศรสีแดง เชื่อมต่อเส้นทางซ่อมบำรุงและโรงงานอุตสาหกรรมอาหารด้านหลัง', img: 'gate4.jpg', floors: [] },
 
         'NEW01': { 
-            title: 'อบ.', 
+            title: 'ตึกเทคโนโลยีอาหารและบริการ (ทอบ.)', 
             desc: 'เป็นสถานที่พัก อบ.', 
             img: 'bldg19.jpg', 
             floors: [
